@@ -315,8 +315,7 @@ int bluefield_validate_ns_entrypoint(uintptr_t entrypoint)
 	 * Check if the non secure entrypoint lies within the non
 	 * secure DRAM.
 	 */
-	if ((entrypoint >= NS_DRAM1_BASE) && (entrypoint <
-			(NS_DRAM1_BASE + NS_DRAM1_SIZE)))
+	if (entrypoint >= NS_DRAM1_BASE)
 		return PSCI_E_SUCCESS;
 
 	return PSCI_E_INVALID_ADDRESS;
