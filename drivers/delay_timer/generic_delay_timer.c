@@ -12,8 +12,8 @@
 #include <generic_delay_timer.h>
 #include <platform.h>
 
-/* Ticks elapsed in one second by a signal of 1 MHz */
-#define MHZ_TICKS_PER_SEC 1000000
+/* Ticks elapsed in one second by a signal of 1 GHz */
+#define GHZ_TICKS_PER_SEC (1000 * 1000 * 1000)
 
 static timer_ops_t ops;
 
@@ -43,7 +43,7 @@ void generic_delay_timer_init_args(uint32_t mult, uint32_t div)
 void generic_delay_timer_init(void)
 {
 	/* Value in ticks */
-	unsigned int mult = MHZ_TICKS_PER_SEC;
+	unsigned int mult = GHZ_TICKS_PER_SEC;
 
 	/* Value in ticks per second (Hz) */
 	unsigned int div  = plat_get_syscnt_freq2();

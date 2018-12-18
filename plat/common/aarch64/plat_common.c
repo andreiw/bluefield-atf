@@ -39,6 +39,21 @@ void bl31_plat_runtime_setup(void)
 	console_uninit();
 #endif
 }
+#if TRUSTED_BOARD_BOOT
+
+#pragma weak plat_enable_tbb
+
+int plat_enable_tbb(void)
+{
+	/*
+	 * This function can be overwritten by platforms that want to decide at
+	 * runtime whether to enable trusted board boot. By default, we do TBB
+	 * whenever it's enabled in the build.
+	 */
+	return 1;
+}
+
+#endif /* TRUSTED_BOARD_BOOT */
 
 #if !ENABLE_PLAT_COMPAT
 /*

@@ -14,7 +14,7 @@
  * The driver must be initialized with a structure that provides a
  * function pointer to return the timer value and a clock
  * multiplier/divider. The ratio of the multiplier and the divider is
- * the clock period in microseconds.
+ * the clock period in nanoseconds.
  ********************************************************************/
 
 typedef struct timer_ops {
@@ -25,6 +25,7 @@ typedef struct timer_ops {
 
 void mdelay(uint32_t msec);
 void udelay(uint32_t usec);
+void ndelay(uint64_t nsec);
 void timer_init(const timer_ops_t *ops_ptr);
 
 

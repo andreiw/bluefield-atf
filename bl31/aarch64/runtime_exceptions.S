@@ -15,6 +15,7 @@
 #include <smccc.h>
 
 	.globl	runtime_exceptions
+	.weak	serror_handler64
 
 	.globl	sync_exception_sp_el0
 	.globl	irq_sp_el0
@@ -305,14 +306,7 @@ vector_entry fiq_aarch64
 	check_vector_size fiq_aarch64
 
 vector_entry serror_aarch64
-	msr	daifclr, #DAIF_ABT_BIT
-
-	/*
-	 * Explicitly save x30 so as to free up a register and to enable
-	 * branching
-	 */
-	str	x30, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_LR]
-	handle_ea #ERROR_EA_ASYNC
+	b serror_handler64
 	check_vector_size serror_aarch64
 
 	/* ---------------------------------------------------------------------
@@ -526,6 +520,16 @@ rt_svc_fw_critical_error:
 	no_ret	report_unhandled_exception
 endfunc smc_handler
 
+func serror_handler64
+	msr	daifclr, #DAIF_ABT_BIT
+
+	/*
+	 * Explicitly save x30 so as to free up a register and to enable
+	 * branching
+	 */
+	str	x30, [sp, #CTX_GPREGS_OFFSET + CTX_GPREG_LR]
+	handle_ea #ERROR_EA_ASYNC
+endfunc serror_handler64
 /*
  * Delegate External Abort handling to platform's EA handler. This function
  * assumes that all GP registers have been saved by the caller.

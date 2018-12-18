@@ -97,7 +97,7 @@ u_register_t plat_psci_stat_get_residency(unsigned int lvl,
 	unsigned long long pwrup_ts = 0, pwrdn_ts = 0;
 	unsigned int pmf_flags;
 
-	assert(lvl >= PSCI_CPU_PWR_LVL && lvl <= PLAT_MAX_PWR_LVL);
+	assert(lvl <= PLAT_MAX_PWR_LVL);
 	assert(state_info);
 	assert(last_cpu_idx >= 0 && last_cpu_idx <= PLATFORM_CORE_COUNT);
 

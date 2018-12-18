@@ -43,15 +43,15 @@ static int emmc_device_state(void)
 	return EMMC_GET_STATE(cmd.resp_data[0]);
 }
 
-static void emmc_set_ext_csd(unsigned int ext_cmd, unsigned int value)
+static void emmc_switch_cmd(unsigned int ext_cmd, unsigned int access,
+			    unsigned int value)
 {
 	emmc_cmd_t cmd;
 	int ret, state;
 
 	zeromem(&cmd, sizeof(emmc_cmd_t));
 	cmd.cmd_idx = EMMC_CMD6;
-	cmd.cmd_arg = EXTCSD_WRITE_BYTES | EXTCSD_CMD(ext_cmd) |
-		      EXTCSD_VALUE(value) | 1;
+	cmd.cmd_arg = access | EXTCSD_CMD(ext_cmd) | EXTCSD_VALUE(value) | 1;
 	ret = ops->send_cmd(&cmd);
 	assert(ret == 0);
 
@@ -61,6 +61,11 @@ static void emmc_set_ext_csd(unsigned int ext_cmd, unsigned int value)
 	} while (state == EMMC_STATE_PRG);
 	/* Ignore improbable errors in release builds */
 	(void)ret;
+}
+
+static void emmc_set_ext_csd(unsigned int ext_cmd, unsigned int value)
+{
+	emmc_switch_cmd(ext_cmd, EXTCSD_WRITE_BYTES, value);
 }
 
 static void emmc_set_ios(int clk, int bus_width)
@@ -299,15 +304,18 @@ size_t emmc_erase_blocks(int lba, size_t size)
 
 static inline void emmc_rpmb_enable(void)
 {
-	emmc_set_ext_csd(CMD_EXTCSD_PARTITION_CONFIG,
-			PART_CFG_BOOT_PARTITION1_ENABLE |
-			PART_CFG_PARTITION1_ACCESS);
+	/* Enable read/write to boot partition 1. */
+	emmc_switch_cmd(CMD_EXTCSD_PARTITION_CONFIG, EXTCSD_CLR_BITS,
+			PART_CFG_PARTITION_ACCESS(~0));
+	emmc_switch_cmd(CMD_EXTCSD_PARTITION_CONFIG, EXTCSD_SET_BITS,
+			PART_CFG_PARTITION_ACCESS(1));
 }
 
 static inline void emmc_rpmb_disable(void)
 {
-	emmc_set_ext_csd(CMD_EXTCSD_PARTITION_CONFIG,
-			PART_CFG_BOOT_PARTITION1_ENABLE);
+	/* Reset read/write to the user partition. */
+	emmc_switch_cmd(CMD_EXTCSD_PARTITION_CONFIG, EXTCSD_CLR_BITS,
+			PART_CFG_PARTITION_ACCESS(~0));
 }
 
 size_t emmc_rpmb_read_blocks(int lba, uintptr_t buf, size_t size)
@@ -338,6 +346,57 @@ size_t emmc_rpmb_erase_blocks(int lba, size_t size)
 	size_erased = emmc_erase_blocks(lba, size);
 	emmc_rpmb_disable();
 	return size_erased;
+}
+
+/*
+ * Write the EXT_CSD registers to the passed ext_csd pointer.
+ * The pointer must be aligned to 512 bytes.
+ */
+static int emmc_get_ext_csd(uintptr_t ext_csd)
+{
+	emmc_cmd_t cmd;
+	int ret;
+
+	inv_dcache_range(ext_csd, EMMC_BLOCK_SIZE);
+	ret = ops->prepare(0, ext_csd, EMMC_BLOCK_SIZE);
+	if (ret)
+		return ret;
+
+	zeromem(&cmd, sizeof(emmc_cmd_t));
+	cmd.cmd_idx = EMMC_CMD8;
+	cmd.resp_type = EMMC_RESPONSE_R1;
+	ret = ops->send_cmd(&cmd);
+	if (ret)
+		return ret;
+
+	ret = ops->read(0, ext_csd, EMMC_BLOCK_SIZE);
+	if (ret)
+		return ret;
+
+	/* wait buffer empty */
+	emmc_device_state();
+
+	return 0;
+}
+
+/* Return the current partition that we will boot from, or negative on error. */
+int emmc_get_boot_partition(void)
+{
+	static uint8_t ext_csd[EMMC_BLOCK_SIZE]
+		__attribute__((aligned(EMMC_BLOCK_SIZE)));
+	int ret = emmc_get_ext_csd((uintptr_t) &ext_csd[0]);
+	if (ret != 0)
+		return ret;
+
+	return PART_CFG_GET_BOOT_PARTITION_ENABLE(
+		ext_csd[CMD_EXTCSD_PARTITION_CONFIG]);
+}
+
+/* Set which partition to boot from. */
+void emmc_set_boot_partition(int part)
+{
+	emmc_set_ext_csd(CMD_EXTCSD_PARTITION_CONFIG,
+			 PART_CFG_BOOT_PARTITION_ENABLE(part));
 }
 
 void emmc_init(const emmc_ops_t *ops_ptr, int clk, int width,

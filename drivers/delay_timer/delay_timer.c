@@ -15,10 +15,10 @@
 static const timer_ops_t *timer_ops;
 
 /***********************************************************
- * Delay for the given number of microseconds. The driver must
+ * Delay for the given number of nanoseconds. The driver must
  * be initialized before calling this function.
  ***********************************************************/
-void udelay(uint32_t usec)
+void ndelay(uint64_t nsec)
 {
 	assert(timer_ops != NULL &&
 		(timer_ops->clk_mult != 0) &&
@@ -27,13 +27,14 @@ void udelay(uint32_t usec)
 
 	uint32_t start, delta, total_delta;
 
-	assert(usec < UINT32_MAX / timer_ops->clk_div);
+	assert(nsec <
+	       (uint64_t)UINT32_MAX * timer_ops->clk_mult / timer_ops->clk_div);
 
 	start = timer_ops->get_timer_value();
 
 	/* Add an extra tick to avoid delaying less than requested. */
 	total_delta =
-		div_round_up(usec * timer_ops->clk_div, timer_ops->clk_mult) + 1;
+	       div_round_up(nsec * timer_ops->clk_div, timer_ops->clk_mult) + 1;
 
 	do {
 		/*
@@ -46,12 +47,21 @@ void udelay(uint32_t usec)
 }
 
 /***********************************************************
+ * Delay for the given number of microseconds. The driver must
+ * be initialized before calling this function.
+ ***********************************************************/
+void udelay(uint32_t usec)
+{
+	ndelay(usec * 1000ULL);
+}
+
+/***********************************************************
  * Delay for the given number of milliseconds. The driver must
  * be initialized before calling this function.
  ***********************************************************/
 void mdelay(uint32_t msec)
 {
-	udelay(msec*1000);
+	udelay(msec * 1000);
 }
 
 /***********************************************************

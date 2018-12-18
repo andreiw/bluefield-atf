@@ -4,7 +4,13 @@
 # SPDX-License-Identifier: BSD-3-Clause
 #
 
-PROJECT		:= cert_create
+ifdef BUILD_BASE
+BUILDDIR = ${BUILD_BASE}/tools/cert_create
+else
+BUILDDIR = .
+endif
+
+PROJECT		:= $(BUILDDIR)/cert_create
 PLAT		:= none
 V		?= 0
 DEBUG		:= 0
@@ -12,15 +18,15 @@ BINARY		:= ${PROJECT}${BIN_EXT}
 OPENSSL_DIR	:= /usr
 USE_TBBR_DEFS   := 1
 
-OBJECTS := src/cert.o \
-           src/cmd_opt.o \
-           src/ext.o \
-           src/key.o \
-           src/main.o \
-           src/sha.o \
-           src/tbbr/tbb_cert.o \
-           src/tbbr/tbb_ext.o \
-           src/tbbr/tbb_key.o
+OBJECTS := $(BUILDDIR)/src/cert.o \
+           $(BUILDDIR)/src/cmd_opt.o \
+           $(BUILDDIR)/src/ext.o \
+           $(BUILDDIR)/src/key.o \
+           $(BUILDDIR)/src/main.o \
+           $(BUILDDIR)/src/sha.o \
+           $(BUILDDIR)/src/tbbr/tbb_cert.o \
+           $(BUILDDIR)/src/tbbr/tbb_ext.o \
+           $(BUILDDIR)/src/tbbr/tbb_key.o
 
 CFLAGS := -Wall -std=c99
 
@@ -69,7 +75,7 @@ HOSTCC ?= gcc
 
 .PHONY: all clean realclean
 
-all: clean ${BINARY}
+all: ${BINARY}
 
 ${BINARY}: ${OBJECTS} Makefile
 	@echo "  LD      $@"
@@ -78,8 +84,9 @@ ${BINARY}: ${OBJECTS} Makefile
                 ${CC} -c ${CFLAGS} -xc - -o src/build_msg.o
 	${Q}${HOSTCC} src/build_msg.o ${OBJECTS} ${LIB_DIR} ${LIB} -o $@
 
-%.o: %.c
+$(BUILDDIR)/%.o: %.c
 	@echo "  CC      $<"
+	@mkdir -p $(@D)
 	${Q}${HOSTCC} -c ${CFLAGS} ${INC_DIR} $< -o $@
 
 clean:

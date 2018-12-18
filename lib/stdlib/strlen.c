@@ -34,8 +34,7 @@
 #include <stddef.h>
 
 size_t
-strlen(str)
-	const char *str;
+strlen(const char *str)
 {
 	register const char *s;
 

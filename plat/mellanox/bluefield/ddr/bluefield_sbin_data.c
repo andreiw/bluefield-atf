@@ -1,0 +1,485 @@
+/*
+ * Copyright (c) 2017, Mellanox Technologies and Contributors.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * Redistributions of source code must retain the above copyright notice, this
+ * list of conditions and the following disclaimer.
+ *
+ * Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * Neither the name of Mellanox nor the names of its contributors may be used
+ * to endorse or promote products derived from this software without specific
+ * prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#include "bluefield_ddr.h"
+
+const uint64_t sbin_trcd[NUM_OF_SPEED_BIN] = {
+	[DDR4_1600J] = 12500000,
+	[DDR4_1600K] = 13750000,
+	[DDR4_1600L] = 15000000,
+	[DDR4_1866L] = 12850000,
+	[DDR4_1866M] = 13920000,
+	[DDR4_1866N] = 15000000,
+	[DDR4_2133N] = 13130000,
+	[DDR4_2133P] = 14060000,
+	[DDR4_2133R] = 15000000,
+	[DDR4_2400P] = 12500000,
+	[DDR4_2400R] = 13320000,
+	[DDR4_2400T] = 14160000,
+	[DDR4_2400U] = 15000000,
+	[DDR4_2666T] = 12750000,
+	[DDR4_2666U] = 13500000,
+	[DDR4_2666V] = 14250000,
+	[DDR4_2666W] = 15000000,
+	[DDR4_1600K_E] = 13500000,
+	[DDR4_1866M_E] = 13500000,
+	[DDR4_2133P_E] = 13500000,
+	[DDR4_2400T_E] = 13750000,
+};
+
+const uint64_t sbin_trp[NUM_OF_SPEED_BIN] = {
+	[DDR4_1600J] = 12500000,
+	[DDR4_1600K] = 13750000,
+	[DDR4_1600L] = 15000000,
+	[DDR4_1866L] = 12850000,
+	[DDR4_1866M] = 13920000,
+	[DDR4_1866N] = 15000000,
+	[DDR4_2133N] = 13130000,
+	[DDR4_2133P] = 14060000,
+	[DDR4_2133R] = 15000000,
+	[DDR4_2400P] = 12500000,
+	[DDR4_2400R] = 13320000,
+	[DDR4_2400T] = 14160000,
+	[DDR4_2400U] = 15000000,
+	[DDR4_2666T] = 12750000,
+	[DDR4_2666U] = 13500000,
+	[DDR4_2666V] = 14250000,
+	[DDR4_2666W] = 15000000,
+	[DDR4_1600K_E] = 13500000,
+	[DDR4_1866M_E] = 13500000,
+	[DDR4_2133P_E] = 13500000,
+	[DDR4_2400T_E] = 13750000,
+};
+
+const uint64_t sbin_tras[NUM_OF_FREQ] = {
+	[DDR4_1600] = 35000000,
+	[DDR4_1866] = 34000000,
+	[DDR4_2133] = 33000000,
+	[DDR4_2400] = 32000000,
+	[DDR4_2666] = 32000000,
+};
+
+const uint64_t sbin_trc[NUM_OF_SPEED_BIN] = {
+	[DDR4_1600J] = 47500000,
+	[DDR4_1600K] = 48500000,
+	[DDR4_1600L] = 50000000,
+	[DDR4_1866L] = 46850000,
+	[DDR4_1866M] = 47920000,
+	[DDR4_1866N] = 49000000,
+	[DDR4_2133N] = 46130000,
+	[DDR4_2133P] = 47060000,
+	[DDR4_2133R] = 48000000,
+	[DDR4_2400P] = 44500000,
+	[DDR4_2400R] = 45320000,
+	[DDR4_2400T] = 46160000,
+	[DDR4_2400U] = 47000000,
+	[DDR4_2666T] = 44750000,
+	[DDR4_2666U] = 45500000,
+	[DDR4_2666V] = 46250000,
+	[DDR4_2666W] = 47000000,
+	[DDR4_1600K_E] = 48500000,
+	[DDR4_1866M_E] = 47500000,
+	[DDR4_2133P_E] = 46500000,
+	[DDR4_2400T_E] = 45750000,
+};
+
+const uint64_t sbin_tccd_l[NUM_OF_FREQ] = {
+	[DDR4_1600] = 6250000,
+	[DDR4_1866] = 5355000,
+	[DDR4_2133] = 5355000,
+	[DDR4_2400] = 5000000,
+	[DDR4_2666] = 5000000,
+};
+
+const uint64_t sbin_trrd_s_512b[NUM_OF_FREQ] = {
+	[DDR4_1600] = 5000000,
+	[DDR4_1866] = 4200000,
+	[DDR4_2133] = 3700000,
+	[DDR4_2400] = 3300000,
+	[DDR4_2666] = 3000000,
+};
+
+const uint64_t sbin_trrd_s_1kb[NUM_OF_FREQ] = {
+	[DDR4_1600] = 5000000,
+	[DDR4_1866] = 4200000,
+	[DDR4_2133] = 3700000,
+	[DDR4_2400] = 3300000,
+	[DDR4_2666] = 3000000,
+};
+
+const uint64_t sbin_trrd_s_2kb[NUM_OF_FREQ] = {
+	[DDR4_1600] = 6000000,
+	[DDR4_1866] = 5300000,
+	[DDR4_2133] = 5300000,
+	[DDR4_2400] = 5300000,
+	[DDR4_2666] = 5300000,
+};
+
+const uint64_t sbin_trrd_l_512b[NUM_OF_FREQ] = {
+	[DDR4_1600] = 6000000,
+	[DDR4_1866] = 5300000,
+	[DDR4_2133] = 5300000,
+	[DDR4_2400] = 4900000,
+	[DDR4_2666] = 4900000,
+};
+
+const uint64_t sbin_trrd_l_1kb[NUM_OF_FREQ] = {
+	[DDR4_1600] = 6000000,
+	[DDR4_1866] = 5300000,
+	[DDR4_2133] = 5300000,
+	[DDR4_2400] = 4900000,
+	[DDR4_2666] = 4900000,
+};
+
+const uint64_t sbin_trrd_l_2kb[NUM_OF_FREQ] = {
+	[DDR4_1600] = 7500000,
+	[DDR4_1866] = 6400000,
+	[DDR4_2133] = 6400000,
+	[DDR4_2400] = 6400000,
+	[DDR4_2666] = 6400000,
+};
+
+const uint64_t sbin_tfaw_512b[NUM_OF_FREQ] = {
+	[DDR4_1600] = 20000000,
+	[DDR4_1866] = 17000000,
+	[DDR4_2133] = 15000000,
+	[DDR4_2400] = 13000000,
+	[DDR4_2666] = 12000000,
+};
+
+const uint64_t sbin_tfaw_1kb[NUM_OF_FREQ] = {
+	[DDR4_1600] = 25000000,
+	[DDR4_1866] = 23000000,
+	[DDR4_2133] = 21000000,
+	[DDR4_2400] = 21000000,
+	[DDR4_2666] = 21000000,
+};
+
+const uint64_t sbin_tfaw_2kb[NUM_OF_FREQ] = {
+	[DDR4_1600] = 35000000,
+	[DDR4_1866] = 30000000,
+	[DDR4_2133] = 30000000,
+	[DDR4_2400] = 30000000,
+	[DDR4_2666] = 30000000,
+};
+
+const uint64_t sbin_pl[NUM_OF_FREQ] = {
+	[DDR4_1600] = 4,
+	[DDR4_1866] = 4,
+	[DDR4_2133] = 4,
+	[DDR4_2400] = 5,
+	[DDR4_2666] = 5,
+};
+
+const uint64_t sbin_tccd_l_slr[NUM_OF_FREQ] = {
+	[DDR4_1600] = 6250000,
+	[DDR4_1866] = 5355000,
+	[DDR4_2133] = 5355000,
+	[DDR4_2400] = 5000000,
+	[DDR4_2666] = 5000000,
+};
+
+const uint64_t sbin_tccd_dlr[NUM_OF_FREQ] = {
+	[DDR4_1600] = 5000000,
+	[DDR4_1866] = 4284000,
+	[DDR4_2133] = 4284000,
+	[DDR4_2400] = 4165000,
+	[DDR4_2666] = 4165000,
+};
+
+const uint64_t sbin_trrd_s_slr[NUM_OF_FREQ] = {
+	[DDR4_1600] = 5000000,
+	[DDR4_1866] = 4200000,
+	[DDR4_2133] = 3700000,
+	[DDR4_2400] = 3300000,
+	[DDR4_2666] = 3000000,
+};
+
+const uint64_t sbin_trrd_l_slr[NUM_OF_FREQ] = {
+	[DDR4_1600] = 6000000,
+	[DDR4_1866] = 5300000,
+	[DDR4_2133] = 5300000,
+	[DDR4_2400] = 4900000,
+	[DDR4_2666] = 4900000,
+};
+
+const uint64_t sbin_tfaw_slr_512b[NUM_OF_FREQ] = {
+	[DDR4_1600] = 20000000,
+	[DDR4_1866] = 17000000,
+	[DDR4_2133] = 15000000,
+	[DDR4_2400] = 13000000,
+	[DDR4_2666] = 12000000,
+};
+
+const uint64_t sbin_tfaw_slr_1kb[NUM_OF_FREQ] = {
+	[DDR4_1600] = 25000000,
+	[DDR4_1866] = 23000000,
+	[DDR4_2133] = 21000000,
+	[DDR4_2400] = 21000000,
+	[DDR4_2666] = 21000000,
+};
+
+const uint64_t sbin_tfaw_slr_2kb[NUM_OF_FREQ] = {
+	[DDR4_1600] = 35000000,
+	[DDR4_1866] = 30000000,
+	[DDR4_2133] = 30000000,
+	[DDR4_2400] = 30000000,
+	[DDR4_2666] = 30000000,
+};
+
+const uint64_t sbin_tcke[NUM_OF_FREQ] = {
+	[DDR4_1600] = 5000000,
+	[DDR4_1866] = 5000000,
+	[DDR4_2133] = 5000000,
+	[DDR4_2400] = 5000000,
+	[DDR4_2666] = 5000000,
+};
+
+const uint64_t sbin_txp[NUM_OF_FREQ] = {
+	[DDR4_1600] = 6000000,
+	[DDR4_1866] = 6000000,
+	[DDR4_2133] = 6000000,
+	[DDR4_2400] = 6000000,
+	[DDR4_2666] = 6000000,
+};
+
+const uint64_t sbin_twlo[NUM_OF_FREQ] = {
+	[DDR4_1600] = 9500000,
+	[DDR4_1866] = 9500000,
+	[DDR4_2133] = 9500000,
+	[DDR4_2400] = 9500000,
+	[DDR4_2666] = 9500000,
+};
+
+const uint64_t sbin_tdqsck[NUM_OF_FREQ] = {
+	[DDR4_1600] = 225000,
+	[DDR4_1866] = 195000,
+	[DDR4_2133] = 180000,
+	[DDR4_2400] = 170000,
+	[DDR4_2666] = 160000,
+};
+
+const uint64_t sbin_tdllk[NUM_OF_FREQ] = {
+	[DDR4_1600] = 597,
+	[DDR4_1866] = 597,
+	[DDR4_2133] = 768,
+	[DDR4_2400] = 768,
+	[DDR4_2666] = 854,
+};
+
+const uint64_t sbin_trfc[NUM_DENSITY] = {
+	[DENSITY_2Gbit] = 160000000,
+	[DENSITY_4Gbit] = 260000000,
+	[DENSITY_8Gbit] = 350000000,
+	[DENSITY_16Gbit] = 550000000,
+};
+
+const uint64_t sbin_trfc1[NUM_DENSITY] = {
+	[DENSITY_2Gbit] = 160000000,
+	[DENSITY_4Gbit] = 260000000,
+	[DENSITY_8Gbit] = 350000000,
+	[DENSITY_16Gbit] = 550000000,
+};
+
+const uint64_t sbin_trfc2[NUM_DENSITY] = {
+	[DENSITY_2Gbit] = 110000000,
+	[DENSITY_4Gbit] = 160000000,
+	[DENSITY_8Gbit] = 260000000,
+	[DENSITY_16Gbit] = 350000000,
+};
+
+const uint64_t sbin_trfc4[NUM_DENSITY] = {
+	[DENSITY_2Gbit] = 90000000,
+	[DENSITY_4Gbit] = 110000000,
+	[DENSITY_8Gbit] = 160000000,
+	[DENSITY_16Gbit] = 260000000,
+};
+
+const uint64_t sbin_trfc_dlr1[NUM_DENSITY] = {
+	[DENSITY_2Gbit] = 90000000,
+	[DENSITY_4Gbit] = 90000000,
+	[DENSITY_8Gbit] = 120000000,
+	[DENSITY_16Gbit] = 190000000,
+};
+
+const uint64_t sbin_trfc_dlr2[NUM_DENSITY] = {
+	[DENSITY_2Gbit] = 55000000,
+	[DENSITY_4Gbit] = 55000000,
+	[DENSITY_8Gbit] = 90000000,
+	[DENSITY_16Gbit] = 120000000,
+};
+
+const uint64_t sbin_trfc_dlr4[NUM_DENSITY] = {
+	[DENSITY_2Gbit] = 40000000,
+	[DENSITY_4Gbit] = 40000000,
+	[DENSITY_8Gbit] = 55000000,
+	[DENSITY_16Gbit] = 90000000,
+};
+
+const uint64_t sbin_trefi[NUM_DENSITY] = {
+	[DENSITY_2Gbit] = 7800000000,
+	[DENSITY_4Gbit] = 7800000000,
+	[DENSITY_8Gbit] = 7800000000,
+	[DENSITY_16Gbit] = 7800000000,
+};
+
+const uint8_t sbin_cl_1_500[NUM_OF_SPEED_BIN] = {
+	[DDR4_1600J] = 10,
+	[DDR4_1600K] = 10,
+	[DDR4_1600L] = 10,
+	[DDR4_1866L] = 10,
+	[DDR4_1866M] = 10,
+	[DDR4_1866N] = 10,
+	[DDR4_2133N] = 10,
+	[DDR4_2133P] = 10,
+	[DDR4_2133R] = 10,
+	[DDR4_2400P] = 10,
+	[DDR4_2400R] = 10,
+	[DDR4_2400T] = 10,
+	[DDR4_2400U] = 10,
+	[DDR4_2666T] = 9,
+	[DDR4_2666U] = 9,
+	[DDR4_2666V] = 10,
+	[DDR4_2666W] = 10,
+	[DDR4_1600K_E] = 9,
+	[DDR4_1866M_E] = 9,
+	[DDR4_2133P_E] = 9,
+	[DDR4_2400T_E] = 10,
+};
+
+const uint8_t sbin_cl_1_250[NUM_OF_SPEED_BIN] = {
+	[DDR4_1600J] = 10,
+	[DDR4_1600K] = 11,
+	[DDR4_1600L] = 12,
+	[DDR4_1866L] = 12,
+	[DDR4_1866M] = 12,
+	[DDR4_1866N] = 12,
+	[DDR4_2133N] = 12,
+	[DDR4_2133P] = 12,
+	[DDR4_2133R] = 12,
+	[DDR4_2400P] = 12,
+	[DDR4_2400R] = 12,
+	[DDR4_2400T] = 12,
+	[DDR4_2400U] = 12,
+	[DDR4_2666T] = 11,
+	[DDR4_2666U] = 11,
+	[DDR4_2666V] = 12,
+	[DDR4_2666W] = 12,
+	[DDR4_1600K_E] = 11,
+	[DDR4_1866M_E] = 11,
+	[DDR4_2133P_E] = 11,
+	[DDR4_2400T_E] = 11,
+};
+
+const uint8_t sbin_cl_1_071[NUM_OF_SPEED_BIN] = {
+	[DDR4_1866L] = 12,
+	[DDR4_1866M] = 13,
+	[DDR4_1866N] = 14,
+	[DDR4_2133N] = 14,
+	[DDR4_2133P] = 14,
+	[DDR4_2133R] = 14,
+	[DDR4_2400P] = 14,
+	[DDR4_2400R] = 14,
+	[DDR4_2400T] = 14,
+	[DDR4_2400U] = 14,
+	[DDR4_2666T] = 13,
+	[DDR4_2666U] = 13,
+	[DDR4_2666V] = 14,
+	[DDR4_2666W] = 14,
+	[DDR4_1866M_E] = 13,
+	[DDR4_2133P_E] = 13,
+	[DDR4_2400T_E] = 13,
+};
+
+const uint8_t sbin_cl_0_937[NUM_OF_SPEED_BIN] = {
+	[DDR4_2133N] = 14,
+	[DDR4_2133P] = 15,
+	[DDR4_2133R] = 16,
+	[DDR4_2400P] = 16,
+	[DDR4_2400R] = 16,
+	[DDR4_2400T] = 16,
+	[DDR4_2400U] = 16,
+	[DDR4_2666T] = 15,
+	[DDR4_2666U] = 15,
+	[DDR4_2666V] = 16,
+	[DDR4_2666W] = 16,
+	[DDR4_2133P_E] = 15,
+	[DDR4_2400T_E] = 15,
+};
+
+const uint8_t sbin_cl_0_833[NUM_OF_SPEED_BIN] = {
+	[DDR4_2400P] = 15,
+	[DDR4_2400R] = 16,
+	[DDR4_2400T] = 17,
+	[DDR4_2400U] = 18,
+	[DDR4_2666T] = 16,
+	[DDR4_2666U] = 17,
+	[DDR4_2666V] = 18,
+	[DDR4_2666W] = 18,
+	[DDR4_2400T_E] = 17,
+};
+
+const uint8_t sbin_cl_0_750[NUM_OF_SPEED_BIN] = {
+	[DDR4_2666T] = 17,
+	[DDR4_2666U] = 18,
+	[DDR4_2666V] = 19,
+	[DDR4_2666W] = 20,
+};
+
+const uint8_t sbin_cwl[NUM_OF_FREQ] = {
+	[DDR4_1600] = 9,
+	[DDR4_1866] = 10,
+	[DDR4_2133] = 11,
+	[DDR4_2400] = 12,
+	[DDR4_2666] = 14,
+};
+const uint32_t sbin_ddr_max_row[NUM_DENSITY][NUM_PACKAGE] = {
+	[DENSITY_2Gbit] = {
+		[PACKAGE_x4] = 0x7FFF,
+		[PACKAGE_x8] = 0x3FFF,
+		[PACKAGE_x16] = 0x3FFF,
+	},
+	[DENSITY_4Gbit] = {
+		[PACKAGE_x4] = 0xFFFF,
+		[PACKAGE_x8] = 0x7FFF,
+		[PACKAGE_x16] = 0x7FFF,
+	},
+	[DENSITY_8Gbit] = {
+		[PACKAGE_x4] = 0x1FFFF,
+		[PACKAGE_x8] = 0xFFFF,
+		[PACKAGE_x16] = 0xFFFF,
+	},
+	[DENSITY_16Gbit] = {
+		[PACKAGE_x4] = 0x3FFFF,
+		[PACKAGE_x8] = 0x1FFFF,
+		[PACKAGE_x16] = 0x1FFFF,
+	},
+};

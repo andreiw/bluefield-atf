@@ -15,6 +15,14 @@
 #include <mmio.h>
 #include <string.h>
 
+/*
+ * Define DWMMC_NO_DMA in your platform's Makefile to use direct
+ * access to the FIFO register rather than DMA.  DMA offloads some of
+ * the work from the processor, but requires more code space to
+ * implement.  Without DMA, we currently only allow reads of up to the
+ * controller's FIFO size, and don't allow writes.
+ */
+
 #define DWMMC_CTRL			(0x00)
 #define CTRL_IDMAC_EN			(1 << 25)
 #define CTRL_DMA_EN			(1 << 5)
@@ -77,7 +85,8 @@
 
 #define DWMMC_FIFOTH			(0x4c)
 #define FIFOTH_TWMARK(x)		(x & 0xfff)
-#define FIFOTH_RWMARK(x)		((x & 0x1ff) << 16)
+#define FIFOTH_RWMARK(x)		((x & 0xfff) << 16)
+#define FIFOTH_GET_RWMARK(data)		(((data) >> 16) & 0xfff)
 #define FIFOTH_DMA_BURST_SIZE(x)	((x & 0x7) << 28)
 
 #define DWMMC_DEBNCE			(0x64)
@@ -92,6 +101,8 @@
 #define DWMMC_CARDTHRCTL		(0x100)
 #define CARDTHRCTL_RD_THR(x)		((x & 0xfff) << 16)
 #define CARDTHRCTL_RD_THR_EN		(1 << 0)
+
+#define DWMMC_FIFO			(0x200)
 
 #define IDMAC_DES0_DIC			(1 << 1)
 #define IDMAC_DES0_LD			(1 << 2)
@@ -133,20 +144,31 @@ static const emmc_ops_t dw_mmc_ops = {
 };
 
 static dw_mmc_params_t dw_params;
+#ifdef DWMMC_NO_DMA
+static int dw_fifo_depth;
+#endif
 
 static void dw_update_clk(void)
 {
 	unsigned int data;
 
-	mmio_write_32(dw_params.reg_base + DWMMC_CMD,
-		      CMD_WAIT_PRVDATA_COMPLETE | CMD_UPDATE_CLK_ONLY |
-		      CMD_START);
 	while (1) {
-		data = mmio_read_32(dw_params.reg_base + DWMMC_CMD);
-		if ((data & CMD_START) == 0)
-			break;
-		data = mmio_read_32(dw_params.reg_base + DWMMC_RINTSTS);
-		assert((data & INT_HLE) == 0);
+		mmio_write_32(dw_params.reg_base + DWMMC_CMD,
+			      CMD_WAIT_PRVDATA_COMPLETE | CMD_UPDATE_CLK_ONLY |
+			      CMD_START);
+		do {
+			/* When CMD_START is cleared, return */
+			data = mmio_read_32(dw_params.reg_base + DWMMC_CMD);
+			if ((data & CMD_START) == 0)
+				return;
+
+			/* If HLE is not set, keep waiting */
+			data = mmio_read_32(dw_params.reg_base + DWMMC_RINTSTS);
+
+		} while (!(data & INT_HLE));
+
+		/* Clear HLE and repeat the command */
+		mmio_write_32(dw_params.reg_base + DWMMC_RINTSTS, INT_HLE);
 	}
 }
 
@@ -196,23 +218,37 @@ static void dw_init(void)
 		data = mmio_read_32(base + DWMMC_CTRL);
 	} while (data);
 
-	/* enable DMA in CTRL */
-	data = CTRL_INT_EN | CTRL_DMA_EN | CTRL_IDMAC_EN;
-	mmio_write_32(base + DWMMC_CTRL, data);
 	mmio_write_32(base + DWMMC_RINTSTS, ~0);
 	mmio_write_32(base + DWMMC_INTMASK, 0);
 	mmio_write_32(base + DWMMC_TMOUT, ~0);
-	mmio_write_32(base + DWMMC_IDINTEN, ~0);
 	mmio_write_32(base + DWMMC_BLKSIZ, EMMC_BLOCK_SIZE);
 	mmio_write_32(base + DWMMC_BYTCNT, 256 * 1024);
 	mmio_write_32(base + DWMMC_DEBNCE, 0x00ffffff);
+
+#ifdef DWMMC_NO_DMA
+	/* just enable interrupts */
+	mmio_write_32(base + DWMMC_CTRL, CTRL_INT_EN);
+#else
+	/* enable DMA in CTRL */
+	data = CTRL_INT_EN | CTRL_DMA_EN | CTRL_IDMAC_EN;
+	mmio_write_32(base + DWMMC_CTRL, data);
+	mmio_write_32(base + DWMMC_IDINTEN, ~0);
+#endif
+
 	mmio_write_32(base + DWMMC_BMOD, BMOD_SWRESET);
 	do {
 		data = mmio_read_32(base + DWMMC_BMOD);
 	} while (data & BMOD_SWRESET);
+
+#ifdef DWMMC_NO_DMA
+	/* read the FIFO size for the maximum transaction size */
+	data = mmio_read_32(base + DWMMC_FIFOTH);
+	dw_fifo_depth = (FIFOTH_GET_RWMARK(data) + 1) * sizeof(int32_t);
+#else
 	/* enable DMA in BMOD */
 	data |= BMOD_ENABLE | BMOD_FB;
 	mmio_write_32(base + DWMMC_BMOD, data);
+#endif
 
 	udelay(100);
 	dw_set_clk(EMMC_BOOT_CLK_RATE);
@@ -246,9 +282,21 @@ static int dw_send_cmd(emmc_cmd_t *cmd)
 		break;
 	case EMMC_CMD24:
 	case EMMC_CMD25:
+#ifdef DWMMC_NO_DMA
+		/*
+		 * Without DMA, we won't have any data arriving in the
+		 * FIFO, and the command will never terminate.  We
+		 * could change the API to do write() before prepare()
+		 * and then allow pre-filling the FIFO, but for now we
+		 * avoid changing the API so we don't break
+		 * out-of-tree backends.
+		 */
+		return -EINVAL;
+#else
 		op = CMD_WRITE | CMD_DATA_TRANS_EXPECT |
 		     CMD_WAIT_PRVDATA_COMPLETE;
 		break;
+#endif
 	default:
 		op = 0;
 		break;
@@ -327,18 +375,12 @@ static int dw_set_ios(int clk, int width)
 	return 0;
 }
 
-static int dw_prepare(int lba, uintptr_t buf, size_t size)
+static void init_dma(uintptr_t buf, size_t size)
 {
+#ifndef DWMMC_NO_DMA
 	struct dw_idmac_desc *desc;
 	int desc_cnt, i, last;
 	uintptr_t base;
-
-	assert(((buf & EMMC_BLOCK_MASK) == 0) &&
-	       ((size % EMMC_BLOCK_SIZE) == 0) &&
-	       (dw_params.desc_size > 0) &&
-	       ((dw_params.reg_base & EMMC_BLOCK_MASK) == 0) &&
-	       ((dw_params.desc_base & EMMC_BLOCK_MASK) == 0) &&
-	       ((dw_params.desc_size & EMMC_BLOCK_MASK) == 0));
 
 	desc_cnt = (size + DWMMC_DMA_MAX_BUFFER_SIZE - 1) /
 		   DWMMC_DMA_MAX_BUFFER_SIZE;
@@ -346,8 +388,6 @@ static int dw_prepare(int lba, uintptr_t buf, size_t size)
 
 	base = dw_params.reg_base;
 	desc = (struct dw_idmac_desc *)dw_params.desc_base;
-	mmio_write_32(base + DWMMC_BYTCNT, size);
-	mmio_write_32(base + DWMMC_RINTSTS, ~0);
 	for (i = 0; i < desc_cnt; i++) {
 		desc[i].des0 = IDMAC_DES0_OWN | IDMAC_DES0_CH | IDMAC_DES0_DIC;
 		desc[i].des1 = IDMAC_DES1_BS1(DWMMC_DMA_MAX_BUFFER_SIZE);
@@ -369,12 +409,46 @@ static int dw_prepare(int lba, uintptr_t buf, size_t size)
 	mmio_write_32(base + DWMMC_DBADDR, dw_params.desc_base);
 	clean_dcache_range(dw_params.desc_base,
 			   desc_cnt * DWMMC_DMA_MAX_BUFFER_SIZE);
+#endif
+}
+
+static int dw_prepare(int lba, uintptr_t buf, size_t size)
+{
+	uintptr_t base = dw_params.reg_base;
+
+	assert(((buf & EMMC_BLOCK_MASK) == 0) &&
+	       ((size % EMMC_BLOCK_SIZE) == 0));
+
+	mmio_write_32(base + DWMMC_BYTCNT, size);
+	mmio_write_32(base + DWMMC_RINTSTS, ~0);
+	init_dma(buf, size);
+
+#ifdef DWMMC_NO_DMA
+	/*
+	 * We can't handle more data than the FIFO can hold because
+	 * send_cmd() assumes it can just wait for the command to
+	 * complete, but we would need to restructure the code to keep
+	 * reading to, or writing from, the FIFO to make that happen.
+	 */
+	if (size > dw_fifo_depth)
+		return -EINVAL;
+#endif
 
 	return 0;
 }
 
 static int dw_read(int lba, uintptr_t buf, size_t size)
 {
+#ifdef DWMMC_NO_DMA
+	uint32_t *p = (uint32_t *)buf;
+	uintptr_t base = dw_params.reg_base;
+
+	assert((size % 4) == 0);
+
+	for (; size; size -= 4, ++p)
+		*p = mmio_read_32(base + DWMMC_FIFO);
+#endif
+
 	return 0;
 }
 

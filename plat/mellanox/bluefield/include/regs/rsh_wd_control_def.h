@@ -1,0 +1,164 @@
+#ifndef __REGS_RSH_WD_CONTROL_DEF_H__
+#define __REGS_RSH_WD_CONTROL_DEF_H__
+
+#ifdef __ASSEMBLER__
+#define _64bit(x) x
+#else /* __ASSEMBLER__ */
+#ifdef __tile__
+#define _64bit(x) x ## UL
+#else /* __tile__ */
+#define _64bit(x) x ## ULL
+#endif /* __tile__ */
+#endif /* __ASSEMBLER */
+
+
+
+#ifndef __DOXYGEN__
+
+/*
+ * MMIO Address Space.
+ * The MMIO physical address space for the ARM Watchdog control frame is
+ * described below.  This is a general description of the MMIO space as
+ * opposed to a register description
+ */
+#define RSH_WD_CONTROL_MMIO_ADDRESS_SPACE__FIRST_WORD 0x0000
+#define RSH_WD_CONTROL_MMIO_ADDRESS_SPACE__LAST_WORD 0x1fff8
+#define RSH_WD_CONTROL_MMIO_ADDRESS_SPACE__LENGTH 0x20000
+#define RSH_WD_CONTROL_MMIO_ADDRESS_SPACE__STRIDE 0x0008
+
+#define RSH_WD_CONTROL_MMIO_ADDRESS_SPACE__FRAMES_SHIFT 12
+#define RSH_WD_CONTROL_MMIO_ADDRESS_SPACE__FRAMES_WIDTH 5
+#define RSH_WD_CONTROL_MMIO_ADDRESS_SPACE__FRAMES_RESET_VAL 0
+#define RSH_WD_CONTROL_MMIO_ADDRESS_SPACE__FRAMES_RMASK 0x1f
+#define RSH_WD_CONTROL_MMIO_ADDRESS_SPACE__FRAMES_MASK  0x1f000
+#define RSH_WD_CONTROL_MMIO_ADDRESS_SPACE__FRAMES_FIELD 12,16
+#define RSH_WD_CONTROL_MMIO_ADDRESS_SPACE__FRAMES_VAL_ARM_WD_CONTROL_FRAME 0x0
+
+
+/*
+ * ARM Watchdog Control and Status.
+ * Watchdog Control and Status.
+ */
+#define RSH_WD_CONTROL_WCS 0x0000
+#define RSH_WD_CONTROL_WCS__LENGTH 0x0001
+
+#define RSH_WD_CONTROL_WCS__EN_SHIFT 0
+#define RSH_WD_CONTROL_WCS__EN_WIDTH 1
+#define RSH_WD_CONTROL_WCS__EN_RESET_VAL 0
+#define RSH_WD_CONTROL_WCS__EN_RMASK 0x1
+#define RSH_WD_CONTROL_WCS__EN_MASK  0x1
+#define RSH_WD_CONTROL_WCS__EN_FIELD 0,0
+
+#define RSH_WD_CONTROL_WCS__WS0_Status_SHIFT 1
+#define RSH_WD_CONTROL_WCS__WS0_Status_WIDTH 1
+#define RSH_WD_CONTROL_WCS__WS0_Status_RESET_VAL 0
+#define RSH_WD_CONTROL_WCS__WS0_Status_RMASK 0x1
+#define RSH_WD_CONTROL_WCS__WS0_Status_MASK  0x2
+#define RSH_WD_CONTROL_WCS__WS0_Status_FIELD 1,1
+
+#define RSH_WD_CONTROL_WCS__WS1_Status_SHIFT 2
+#define RSH_WD_CONTROL_WCS__WS1_Status_WIDTH 1
+#define RSH_WD_CONTROL_WCS__WS1_Status_RESET_VAL 0
+#define RSH_WD_CONTROL_WCS__WS1_Status_RMASK 0x1
+#define RSH_WD_CONTROL_WCS__WS1_Status_MASK  0x4
+#define RSH_WD_CONTROL_WCS__WS1_Status_FIELD 2,2
+
+
+/*
+ * ARM Watchdog Offset.
+ * Watchdog Offset register.
+ */
+#define RSH_WD_CONTROL_WOR 0x0008
+#define RSH_WD_CONTROL_WOR__LENGTH 0x0001
+
+#define RSH_WD_CONTROL_WOR__OFFSET_SHIFT 0
+#define RSH_WD_CONTROL_WOR__OFFSET_WIDTH 32
+#define RSH_WD_CONTROL_WOR__OFFSET_RESET_VAL 0
+#define RSH_WD_CONTROL_WOR__OFFSET_RMASK 0xffffffff
+#define RSH_WD_CONTROL_WOR__OFFSET_MASK  0xffffffff
+#define RSH_WD_CONTROL_WOR__OFFSET_FIELD 0,31
+
+
+/*
+ * ARM Watchdog Compare Value Lo.
+ * Watchdog Compare Value register, low 32bits.
+ */
+#define RSH_WD_CONTROL_WCV_LO 0x0010
+#define RSH_WD_CONTROL_WCV_LO__LENGTH 0x0001
+
+#define RSH_WD_CONTROL_WCV_LO__COMP_VAL_LO_SHIFT 0
+#define RSH_WD_CONTROL_WCV_LO__COMP_VAL_LO_WIDTH 32
+#define RSH_WD_CONTROL_WCV_LO__COMP_VAL_LO_RESET_VAL 0
+#define RSH_WD_CONTROL_WCV_LO__COMP_VAL_LO_RMASK 0xffffffff
+#define RSH_WD_CONTROL_WCV_LO__COMP_VAL_LO_MASK  0xffffffff
+#define RSH_WD_CONTROL_WCV_LO__COMP_VAL_LO_FIELD 0,31
+
+
+/*
+ * ARM Watchdog Compare Value Hi.
+ * Watchdog Compare Value register, high 32bits.
+ */
+#define RSH_WD_CONTROL_WCV_HI 0x0014
+#define RSH_WD_CONTROL_WCV_HI__LENGTH 0x0001
+
+#define RSH_WD_CONTROL_WCV_HI__COMP_VAL_HI_SHIFT 0
+#define RSH_WD_CONTROL_WCV_HI__COMP_VAL_HI_WIDTH 32
+#define RSH_WD_CONTROL_WCV_HI__COMP_VAL_HI_RESET_VAL 0
+#define RSH_WD_CONTROL_WCV_HI__COMP_VAL_HI_RMASK 0xffffffff
+#define RSH_WD_CONTROL_WCV_HI__COMP_VAL_HI_MASK  0xffffffff
+#define RSH_WD_CONTROL_WCV_HI__COMP_VAL_HI_FIELD 0,31
+
+
+/*
+ * ARM Watchdog Interface Identification Register.
+ * Read-only register that contains watchdog identification information
+ */
+#define RSH_WD_CONTROL_W_IIDR 0x0fcc
+#define RSH_WD_CONTROL_W_IIDR__LENGTH 0x0001
+
+#define RSH_WD_CONTROL_W_IIDR__IMPL_SHIFT 0
+#define RSH_WD_CONTROL_W_IIDR__IMPL_WIDTH 12
+#define RSH_WD_CONTROL_W_IIDR__IMPL_RESET_VAL 605
+#define RSH_WD_CONTROL_W_IIDR__IMPL_RMASK 0xfff
+#define RSH_WD_CONTROL_W_IIDR__IMPL_MASK  0xfff
+#define RSH_WD_CONTROL_W_IIDR__IMPL_FIELD 0,11
+
+#define RSH_WD_CONTROL_W_IIDR__REV_SHIFT 12
+#define RSH_WD_CONTROL_W_IIDR__REV_WIDTH 4
+#define RSH_WD_CONTROL_W_IIDR__REV_RESET_VAL 0
+#define RSH_WD_CONTROL_W_IIDR__REV_RMASK 0xf
+#define RSH_WD_CONTROL_W_IIDR__REV_MASK  0xf000
+#define RSH_WD_CONTROL_W_IIDR__REV_FIELD 12,15
+
+#define RSH_WD_CONTROL_W_IIDR__ARCH_VER_SHIFT 16
+#define RSH_WD_CONTROL_W_IIDR__ARCH_VER_WIDTH 4
+#define RSH_WD_CONTROL_W_IIDR__ARCH_VER_RESET_VAL 0
+#define RSH_WD_CONTROL_W_IIDR__ARCH_VER_RMASK 0xf
+#define RSH_WD_CONTROL_W_IIDR__ARCH_VER_MASK  0xf0000
+#define RSH_WD_CONTROL_W_IIDR__ARCH_VER_FIELD 16,19
+
+#define RSH_WD_CONTROL_W_IIDR__PROD_ID_SHIFT 20
+#define RSH_WD_CONTROL_W_IIDR__PROD_ID_WIDTH 12
+#define RSH_WD_CONTROL_W_IIDR__PROD_ID_RESET_VAL 3057
+#define RSH_WD_CONTROL_W_IIDR__PROD_ID_RMASK 0xfff
+#define RSH_WD_CONTROL_W_IIDR__PROD_ID_MASK  0xfff00000
+#define RSH_WD_CONTROL_W_IIDR__PROD_ID_FIELD 20,31
+
+
+/*
+ * ARM Watchdog Peripheral ID2 Register.
+ * Read-only watchdog identification register
+ */
+#define RSH_WD_CONTROL_W_PIDR2 0x0fe8
+#define RSH_WD_CONTROL_W_PIDR2__LENGTH 0x0001
+
+#define RSH_WD_CONTROL_W_PIDR2__ARCH_REV_SHIFT 4
+#define RSH_WD_CONTROL_W_PIDR2__ARCH_REV_WIDTH 4
+#define RSH_WD_CONTROL_W_PIDR2__ARCH_REV_RESET_VAL 0
+#define RSH_WD_CONTROL_W_PIDR2__ARCH_REV_RMASK 0xf
+#define RSH_WD_CONTROL_W_PIDR2__ARCH_REV_MASK  0xf0
+#define RSH_WD_CONTROL_W_PIDR2__ARCH_REV_FIELD 4,7
+
+#endif /* !defined(__DOXYGEN__) */
+
+#endif /* !defined(__REGS_RSH_WD_CONTROL_DEF_H__) */

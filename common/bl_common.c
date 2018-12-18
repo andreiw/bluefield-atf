@@ -35,7 +35,9 @@ void dyn_disable_auth(void)
 
 /******************************************************************************
  * Function to determine whether the authentication is disabled dynamically.
+ * This capability is restricted to LOAD_IMAGE_V2.
  *****************************************************************************/
+#if LOAD_IMAGE_V2
 static int dyn_is_auth_disabled(void)
 {
 # ifdef DYN_DISABLE_AUTH
@@ -44,6 +46,7 @@ static int dyn_is_auth_disabled(void)
 	return 0;
 # endif
 }
+#endif /* LOAD_IMAGE_V2 */
 #endif /* TRUSTED_BOARD_BOOT */
 
 uintptr_t page_align(uintptr_t value, unsigned dir)
@@ -521,15 +524,17 @@ static int load_auth_image_internal(meminfo_t *mem_layout,
 	int rc;
 
 #if TRUSTED_BOARD_BOOT
-	unsigned int parent_id;
+	if (plat_enable_tbb()) {
+		unsigned int parent_id;
 
-	/* Use recursion to authenticate parent images */
-	rc = auth_mod_get_parent_id(image_id, &parent_id);
-	if (rc == 0) {
-		rc = load_auth_image_internal(mem_layout, parent_id, image_base,
-				     image_data, NULL, 1);
-		if (rc != 0) {
-			return rc;
+		/* Use recursion to authenticate parent images */
+		rc = auth_mod_get_parent_id(image_id, &parent_id);
+		if (rc == 0) {
+			rc = load_auth_image_internal(mem_layout, parent_id,
+					     image_base, image_data, NULL, 1);
+			if (rc != 0) {
+				return rc;
+			}
 		}
 	}
 #endif /* TRUSTED_BOARD_BOOT */
@@ -542,17 +547,19 @@ static int load_auth_image_internal(meminfo_t *mem_layout,
 	}
 
 #if TRUSTED_BOARD_BOOT
-	/* Authenticate it */
-	rc = auth_mod_verify_img(image_id,
-				 (void *)image_data->image_base,
-				 image_data->image_size);
-	if (rc != 0) {
-		/* Authentication error, zero memory and flush it right away. */
-		zero_normalmem((void *)image_data->image_base,
-		       image_data->image_size);
-		flush_dcache_range(image_data->image_base,
-				   image_data->image_size);
-		return -EAUTH;
+	if (plat_enable_tbb()) {
+		/* Authenticate it */
+		rc = auth_mod_verify_img(image_id,
+					 (void *)image_data->image_base,
+					 image_data->image_size);
+		if (rc != 0) {
+			/* Authentication error, zero memory and flush it right away. */
+			zero_normalmem((void *)image_data->image_base,
+				       image_data->image_size);
+			flush_dcache_range(image_data->image_base,
+					   image_data->image_size);
+			return -EAUTH;
+		}
 	}
 	/*
 	 * File has been successfully loaded and authenticated.

@@ -90,6 +90,8 @@ ifneq (${DEBUG}, 0)
         LOG_LEVEL	:=	40
 else
         BUILD_TYPE	:=	release
+        TF_CFLAGS	+= 	-g
+        ASFLAGS		+= 	-g -Wa,--gdwarf-2
         # Use LOG_LEVEL_NOTICE by default for release builds
         LOG_LEVEL	:=	20
 endif
@@ -163,6 +165,8 @@ ASFLAGS			+=	$(CPPFLAGS) $(ASFLAGS_$(ARCH))			\
 				-Wa,--fatal-warnings
 TF_CFLAGS		+=	$(CPPFLAGS) $(TF_CFLAGS_$(ARCH))		\
 				-ffreestanding -fno-builtin -Wall -std=gnu99	\
+				-Wextra -Wno-unused-parameter -Wno-sign-compare	\
+				-Wstrict-prototypes -Wno-type-limits		\
 				-Os -ffunction-sections -fdata-sections
 
 GCC_V_OUTPUT		:=	$(shell $(CC) -v 2>&1)
@@ -233,7 +237,7 @@ INCLUDES		+=	-Iinclude				\
 
 include ${MAKE_HELPERS_DIRECTORY}plat_helpers.mk
 
-BUILD_BASE		:=	./build
+BUILD_BASE		?=	./build
 BUILD_PLAT		:=	${BUILD_BASE}/${PLAT}/${BUILD_TYPE}
 
 SPDS			:=	$(sort $(filter-out none, $(patsubst services/spd/%,%,$(wildcard services/spd/*))))
@@ -484,11 +488,11 @@ include lib/stack_protector/stack_protector.mk
 
 # Variables for use with Certificate Generation Tool
 CRTTOOLPATH		?=	tools/cert_create
-CRTTOOL			?=	${CRTTOOLPATH}/cert_create${BIN_EXT}
+CRTTOOL			?=	${BUILD_BASE}/${CRTTOOLPATH}/cert_create${BIN_EXT}
 
 # Variables for use with Firmware Image Package
 FIPTOOLPATH		?=	tools/fiptool
-FIPTOOL			?=	${FIPTOOLPATH}/fiptool${BIN_EXT}
+FIPTOOL			?=	${BUILD_BASE}/${FIPTOOLPATH}/fiptool${BIN_EXT}
 
 ################################################################################
 # Include BL specific makefiles

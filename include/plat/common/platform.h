@@ -141,6 +141,7 @@ int bl1_plat_mem_check(uintptr_t mem_base, unsigned int mem_size,
 void bl1_init_bl2_mem_layout(const struct meminfo *bl1_mem_layout,
 			     struct meminfo *bl2_mem_layout);
 #endif
+
 /*
  * The following functions are used for image loading process in BL1.
  */
@@ -332,6 +333,7 @@ void bl32_plat_enable_mmu(uint32_t flags);
 /*******************************************************************************
  * Trusted Board Boot functions
  ******************************************************************************/
+int plat_enable_tbb(void);
 int plat_get_rotpk_info(void *cookie, void **key_ptr, unsigned int *key_len,
 			unsigned int *flags);
 int plat_get_nv_ctr(void *cookie, unsigned int *nv_ctr);

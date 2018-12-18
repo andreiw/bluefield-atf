@@ -440,13 +440,20 @@ void psci_do_state_coordination(unsigned int end_pwrlvl,
 	 * We update the requested power state from state_info and then
 	 * set the target state as RUN.
 	 */
-	for (lvl = lvl + 1; lvl <= end_pwrlvl; lvl++) {
-		psci_set_req_local_pwr_state(lvl, cpu_idx,
-					     state_info->pwr_domain_state[lvl]);
-		state_info->pwr_domain_state[lvl] = PSCI_LOCAL_STATE_RUN;
 
+	/*
+	 * This outer check of lvl was put here to prevent the GCC 7.3.0
+	 * array-bounds error when accessing the psci_req_local_pwr_states
+	 * array.
+	 */
+
+	if (lvl < PLAT_MAX_PWR_LVL) {
+		for (lvl = lvl + 1; lvl <= end_pwrlvl; lvl++) {
+			psci_set_req_local_pwr_state(lvl, cpu_idx,
+						     state_info->pwr_domain_state[lvl]);
+			state_info->pwr_domain_state[lvl] = PSCI_LOCAL_STATE_RUN;
+		}
 	}
-
 	/* Update the target state in the power domain nodes */
 	psci_set_target_local_pwr_states(end_pwrlvl, state_info);
 }

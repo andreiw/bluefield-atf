@@ -24,10 +24,10 @@
 	 *  the runtime memory is initialized for images which do not
 	 *  need to copy the .data section from ROM to RAM.
 	 */
-.section .data.console_list ; .align 3
-	console_list: .quad 0x0
 .section .data.console_state ; .align 0
 	console_state: .byte CONSOLE_FLAG_BOOT
+.section .data.console_list ; .align 3
+	console_list: .quad 0x0
 
 	/* -----------------------------------------------
 	 * int console_register(console_t *console)

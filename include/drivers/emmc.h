@@ -55,8 +55,9 @@
 #define CMD_EXTCSD_BUS_WIDTH		183
 #define CMD_EXTCSD_HS_TIMING		185
 
-#define PART_CFG_BOOT_PARTITION1_ENABLE	(1 << 3)
-#define PART_CFG_PARTITION1_ACCESS	(1 << 0)
+#define PART_CFG_BOOT_PARTITION_ENABLE(x) (((x) & 0x7) << 3)
+#define PART_CFG_GET_BOOT_PARTITION_ENABLE(val) (((val) >> 3) & 0x7)
+#define PART_CFG_PARTITION_ACCESS(x)	(((x) & 0x7) << 0)
 
 /* values in EXT CSD register */
 #define EMMC_BUS_WIDTH_1		0
@@ -159,6 +160,8 @@ size_t emmc_erase_blocks(int lba, size_t size);
 size_t emmc_rpmb_read_blocks(int lba, uintptr_t buf, size_t size);
 size_t emmc_rpmb_write_blocks(int lba, const uintptr_t buf, size_t size);
 size_t emmc_rpmb_erase_blocks(int lba, size_t size);
+int emmc_get_boot_partition(void);
+void emmc_set_boot_partition(int part);
 void emmc_init(const emmc_ops_t *ops, int clk, int bus_width,
 	       unsigned int flags);
 
