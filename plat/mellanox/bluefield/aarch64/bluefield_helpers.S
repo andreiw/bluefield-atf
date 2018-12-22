@@ -294,6 +294,10 @@ endfunc plat_secondary_cold_boot_setup
 	 * contains.
 	 */
 func plat_get_my_entrypoint
+
+	mov	x0, #DCISW
+	bl	dcsw_op_all
+
 	mov_imm	x0, RSHIM_BASE
 	ldr	x0, [x0, #RSH_SCRATCHPAD4]
 	tbnz	x0, #0, warm_reset
