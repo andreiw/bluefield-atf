@@ -167,7 +167,7 @@ TRUSTED_BOARD_BOOT		:= 0
 USE_COHERENT_MEM		:= 1
 
 # Use tbbr_oid.h instead of platform_oid.h
-USE_TBBR_DEFS			= $(ERROR_DEPRECATED)
+USE_TBBR_DEFS			:= $(ERROR_DEPRECATED)
 
 # Build verbosity
 V				:= 0

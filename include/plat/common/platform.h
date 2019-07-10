@@ -333,7 +333,6 @@ void bl32_plat_enable_mmu(uint32_t flags);
 /*******************************************************************************
  * Trusted Board Boot functions
  ******************************************************************************/
-int plat_enable_tbb(void);
 int plat_get_rotpk_info(void *cookie, void **key_ptr, unsigned int *key_len,
 			unsigned int *flags);
 int plat_get_nv_ctr(void *cookie, unsigned int *nv_ctr);

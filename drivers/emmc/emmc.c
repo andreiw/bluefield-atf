@@ -144,6 +144,9 @@ static int emmc_enumerate(int clk, int bus_width)
 		state = emmc_device_state();
 	} while (state != EMMC_STATE_TRAN);
 
+	/* CMD8: Read EXT_CSD */
+	emmc_get_boot_partition();
+
 	emmc_set_ios(clk, bus_width);
 	return ret;
 }

@@ -234,6 +234,7 @@ static void dw_init(void)
 	mmio_write_32(base + DWMMC_CTRL, data);
 	mmio_write_32(base + DWMMC_IDINTEN, ~0);
 #endif
+	dsbsy();
 
 	mmio_write_32(base + DWMMC_BMOD, BMOD_SWRESET);
 	do {
@@ -251,13 +252,13 @@ static void dw_init(void)
 #endif
 
 	udelay(100);
-	dw_set_clk(EMMC_BOOT_CLK_RATE);
+	dw_set_ios(EMMC_BOOT_CLK_RATE, EMMC_BUS_WIDTH_1);
 	udelay(100);
 }
 
 static int dw_send_cmd(emmc_cmd_t *cmd)
 {
-	unsigned int op, data, err_mask;
+	unsigned int op, data, err_mask, pending;
 	uintptr_t base;
 	int timeout;
 
@@ -325,24 +326,30 @@ static int dw_send_cmd(emmc_cmd_t *cmd)
 
 	mmio_write_32(base + DWMMC_RINTSTS, ~0);
 	mmio_write_32(base + DWMMC_CMDARG, cmd->cmd_arg);
+	dsbsy();
 	mmio_write_32(base + DWMMC_CMD, op | cmd->cmd_idx);
 
 	err_mask = INT_EBE | INT_HLE | INT_RTO | INT_RCRC | INT_RE |
 		   INT_DCRC | INT_DRT | INT_SBE;
 	timeout = TIMEOUT;
+	pending = INT_CMD_DONE | ((op & CMD_DATA_TRANS_EXPECT) ? INT_DTO : 0);
 	do {
 		udelay(500);
 		data = mmio_read_32(base + DWMMC_RINTSTS);
 
-		if (data & err_mask)
+		if (data & err_mask) {
+			ERROR("%s, RINTSTS:0x%x\n", __func__, data);
 			return -EIO;
+		}
 		if (data & INT_DTO)
-			break;
+			pending &= ~INT_DTO;
+		if (data & INT_CMD_DONE)
+			pending &= ~INT_CMD_DONE;
 		if (--timeout == 0) {
 			ERROR("%s, RINTSTS:0x%x\n", __func__, data);
 			panic();
 		}
-	} while (!(data & INT_CMD_DONE));
+	} while (pending);
 
 	if (op & CMD_RESP_EXPECT) {
 		cmd->resp_data[0] = mmio_read_32(base + DWMMC_RESP0);
