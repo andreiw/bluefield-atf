@@ -314,9 +314,13 @@ int bluefield_validate_ns_entrypoint(uintptr_t entrypoint)
 	/*
 	 * Check if the non secure entrypoint lies within the non
 	 * secure DRAM.
+	 *
+	 * Note: we don't check against NS_DRAM1_SIZE: we likely
+	 * have more RAM in the system than hardcoded inside
+	 * bluefield_def.h. That's fine - trusted RAM is below
+	 * NS_DRAM1_BASE anyway.
 	 */
-	if ((entrypoint >= NS_DRAM1_BASE) && (entrypoint <
-			(NS_DRAM1_BASE + NS_DRAM1_SIZE)))
+	if (entrypoint >= NS_DRAM1_BASE)
 		return PSCI_E_SUCCESS;
 
 	return PSCI_E_INVALID_ADDRESS;
